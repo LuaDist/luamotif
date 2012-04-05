@@ -22,7 +22,7 @@ end
 
 SetLanguageProc(nil, nil, nil)
 
-toplevel, app = Initialize("Demos")
+toplevel, app = Initialize("LuaMotif")
 
 rc = RowColumn {
 	pb = PushButton {

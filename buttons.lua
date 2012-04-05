@@ -82,7 +82,7 @@ gui = Form {
 tf = gui[2].groups.rc.t
 
 SetLanguageProc(nil, nil, nil)
-toplevel, app = Initialize("XPoS")
+toplevel, app = Initialize("LuaMotif")
 
 Realize(toplevel, gui)
 

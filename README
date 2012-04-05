@@ -5,3 +5,6 @@ You can reach the author at marc@msys.ch
 
 Makefile is for BSD systems
 GNUmakefile is for Linux systems
+
+LuaMotif contains X ressources.  Copy them to the approprate place
+on your system.
