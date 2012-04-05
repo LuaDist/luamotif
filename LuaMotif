@@ -1,0 +1,48 @@
+
+! LuaMotif settings for default (1024x768) screensize
+
+! Font settings
+
+*renderTable: variable
+*renderTable.variable.fontName: Arial
+*renderTable.variable.fontSize: 10
+*renderTable.variable.fontType: FONT_IS_XFT
+
+! Color definitions
+
+! Main Window settings
+
+LuaMotif.title:	Written in Lua
+LuaMotif.width:	1024
+LuaMotif.height:	768
+LuaMotif.iconName:	Lua
+
+*.toolTipEnable:	True
+*.toolTipPostDelay:	1500
+*.toolTipPostDuration:	0
+*.TipLabel.foreground:	black
+*.TipLabel.background:	Light Yellow
+*.TipShell.borderWidth: 1
+*.TipShell.borderColor: black
+
+LuaMotif*foreground: #000000
+LuaMotif*background: #c1c1c1
+LuaMotif*XmList.background: #999999
+LuaMotif*XmPushButton.background: #999999
+LuaMotif*XmDrawnButton.background: #999999
+LuaMotif*XmRowColumn*OptionButton.background: #999999
+LuaMotif*XmArrowButton.background: #c1c1c1
+LuaMotif*XmText.background: #b98e8e
+LuaMotif*XmScrolledWindow.XmText.background: #000000
+LuaMotif*XmScrolledWindow.XmScrollBar.width:	80
+LuaMotif*XmTextField.background: #b98e8e
+LuaMotif*XmScrollBar.background: #999999
+LuaMotif*XmScrollBar.foreground: #999999
+LuaMotif*XmScale*foreground: #000000
+LuaMotif*XmMenuShell*background: #c1c1c1
+LuaMotif*XmMenuShell*XmToggleButton.selectColor: #000000
+LuaMotif*highlightColor: #000000
+LuaMotif*form*statusBar*foreground: #c1c1c1
+LuaMotif*form*statusBar*troughColor: #b98e8e
+LuaMotif*form*helpButton*background: #9f8484
+LuaMotif*form*textLabel*background: #999999
