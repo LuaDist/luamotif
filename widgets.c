@@ -60,6 +60,15 @@ lm_##W(lua_State *L) \
 	return 1; \
 }
 
+/* Pseudo widget class to setupa a callback with parameters */
+static int
+lm_Callback(lua_State *L)
+{
+	lua_pushstring(L, "lmCallback");
+	lua_setfield(L, -2, "__widgetClass");
+	return 1;
+}
+
 GadgetConstructor(ArrowButton)
 GadgetConstructor(Label)
 GadgetConstructor(PushButton)
@@ -119,6 +128,7 @@ struct luaL_reg lm_widgetConstructors[] = {
 	{ "ArrowButton",	lm_ArrowButton },
 	{ "BulletinBoard",	lm_BulletinBoard },
 	{ "ButtonBox",		lm_ButtonBox },
+	{ "Callback",		lm_Callback },	/* pseudo widget */
 	{ "CascadeButton",	lm_CascadeButton },
 	{ "Column",		lm_Column },
 	{ "ComboBox",		lm_ComboBox },

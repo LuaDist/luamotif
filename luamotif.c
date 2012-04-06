@@ -240,10 +240,15 @@ static void
 lm_Callback(Widget widget, XtPointer client_data, XtPointer call_data)
 {
 	struct cb_data *cbd = (struct cb_data *)client_data;
-
+	int nargs = 1;
+	
 	lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->ref);
 	lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->obj);
-	lua_pcall(cbd->L, 1, 0, 0);
+	if (cbd->data != -1) {
+		lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->data);
+		nargs++;
+	}
+	lua_pcall(cbd->L, nargs, 0, 0);
 }
 
 static void
@@ -253,6 +258,8 @@ lm_DestroyCallback(Widget widget, XtPointer client_data, XtPointer call_data)
 
 	luaL_unref(cbd->L, LUA_REGISTRYINDEX, cbd->ref);
 	luaL_unref(cbd->L, LUA_REGISTRYINDEX, cbd->obj);
+	if (cbd->data != -1)
+		luaL_unref(cbd->L, LUA_REGISTRYINDEX, cbd->data);
 	free(cbd);
 }
 
@@ -276,9 +283,20 @@ lm_AddCallback(lua_State *L)
 		luaL_error(L, "memory error");
 
 	cbd->L = L;
+	
+	/* reference any data, if present */
+	if (lua_gettop(L) == 4) {
+		printf("store data\n");
+		cbd->data = luaL_ref(L, LUA_REGISTRYINDEX);
+	} else
+		cbd->data = -1;
+	/* reference the function */
 	cbd->ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	cb = lua_tostring(L, -1);
 	XtAddCallback(w, (char *)cb, lm_Callback, cbd);
+	lua_pop(L, 1);
+	/* reference the widget */
+	cbd->obj = luaL_ref(L, LUA_REGISTRYINDEX);
 	XtAddCallback(w, XmNdestroyCallback, lm_DestroyCallback, cbd);
 	return 0;
 }
@@ -749,6 +767,29 @@ lm_newindex(lua_State *L)
 
 #define MAXARGS 64
 
+static int
+lm_SetupCallback(lua_State *L, Widget w, const char *name)
+{
+	struct cb_data *cbd;
+	
+	cbd = malloc(sizeof(struct cb_data));
+	if (cbd == NULL)
+		luaL_error(L, "memory error");
+	cbd->L = L;
+	
+	lua_rawgeti(L, -1, 1);
+	cbd->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	lua_pushvalue(L, lua_gettop(L));
+	cbd->obj = luaL_ref(L, LUA_REGISTRYINDEX);
+	lua_rawgeti(L, -1, 2);
+	cbd->data = luaL_ref(L, LUA_REGISTRYINDEX);
+	
+	XtAddCallback(w, name, lm_Callback, cbd);
+	XtAddCallback(w, XmNdestroyCallback, lm_DestroyCallback, cbd);
+
+	return 0;
+}
+
 static Widget
 lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
     const char *name)
@@ -761,6 +802,7 @@ lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
 	iconv_t cd;
 #endif
 	struct cb_data *cbd;
+	int data = -1;
 	size_t len, inbytesleft, outbytesleft;
 	char nam[64], *nm;
 	int n, narg, t;
@@ -776,6 +818,15 @@ lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
 
 	lua_pushstring(L, "__widgetClass");
 	lua_rawget(L, -2);
+	if (lua_isstring(L, -1)) {
+		if (!strcmp("lmCallback", lua_tostring(L, -1))) {
+			lua_pop(L, 1);
+			lm_SetupCallback(L, parent, name);
+		} else
+			lua_pop(L, 1);
+		return parent;
+	}
+	
 	class = (WidgetClass)lua_topointer(L, -1);
 	lua_pop(L, 1);
 
@@ -788,7 +839,8 @@ lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
 				strlcpy(nam, lua_tostring(L, -2), sizeof nam);
 				break;
 			case LUA_TNUMBER:
-				snprintf(nam, sizeof nam, "%.f", lua_tonumber(L, -2));
+				snprintf(nam, sizeof nam, "%.f",
+				    lua_tonumber(L, -2));
 				break;
 			default:
 				strlcpy(nam, name, sizeof nam);
@@ -878,6 +930,7 @@ lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
 			if (cbd == NULL)
 				luaL_error(L, "memory error");
 			cbd->L = L;
+			cbd->data = -1;
 			lua_pushvalue(L, -1);
 			cbd->ref = luaL_ref(L, LUA_REGISTRYINDEX);
 			lua_pushvalue(L, t);
