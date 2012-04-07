@@ -64,8 +64,9 @@ lm_GetWidget(lua_State *L, int t)
 	w = (Widget)lua_topointer(L, -1);
 	lua_pop(L, 1);
 
-	if (w == NULL)
+	if (w == NULL) {
 		luaL_argerror(L, t, "widget expected");
+	}
 	return w;
 }
 
@@ -196,6 +197,26 @@ lm_Remove(lua_State *L)
 	return 0;
 }
 
+lm_Insert(lua_State *L)
+{
+	Widget widget;
+
+	widget = lm_GetWidget(L, 1);
+	
+	XmTextInsert(widget, luaL_checkinteger(L, 2),
+	    (char *)luaL_checkstring(L, 3));
+	return 0;
+}
+
+lm_GetLastPosition(lua_State *L)
+{
+	Widget widget;
+
+	widget = lm_GetWidget(L, 1);
+	lua_pushinteger(L, XmTextGetLastPosition(widget));
+	return 1;
+}
+
 static int
 lm_SetInsertionPosition(lua_State *L)
 {
@@ -213,6 +234,17 @@ lm_SetMaxLength(lua_State *L)
 
 	widget = lm_GetWidget(L, 1);
 	XmTextSetMaxLength(widget, luaL_checkint(L, 2));
+	return 0;
+}
+
+lm_SetSelection(lua_State *L)
+{
+	Widget widget;
+
+	widget = lm_GetWidget(L, 1);
+
+	XmTextSetSelection(widget, luaL_checkint(L, 2), luaL_checkint(L, 3),
+	    XtLastTimestampProcessed(XtDisplay(widget)));
 	return 0;
 }
 
@@ -285,10 +317,9 @@ lm_AddCallback(lua_State *L)
 	cbd->L = L;
 	
 	/* reference any data, if present */
-	if (lua_gettop(L) == 4) {
-		printf("store data\n");
+	if (lua_gettop(L) == 4)
 		cbd->data = luaL_ref(L, LUA_REGISTRYINDEX);
-	} else
+	else
 		cbd->data = -1;
 	/* reference the function */
 	cbd->ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -426,6 +457,18 @@ lm_SetValues(lua_State *L)
 	return 0;
 }
 
+lm_SetKeyboardFocus(lua_State *L)
+{
+	Arg *args;
+	Widget subtree, descendant;
+	int narg;
+
+	subtree = lm_GetWidget(L, 1);
+	descendant = lm_GetWidget(L, 2);
+	XtSetKeyboardFocus(subtree, descendant);
+	return 0;
+}
+
 static int
 lm_SetWorkWindow(lua_State *L)
 {
@@ -558,7 +601,7 @@ lm_SetSensitive(lua_State *L)
 	int value;
 
 	widget = lm_GetWidget(L, 1);
-	value = luaL_checkint(L, 2);
+	value = luaL_checkinteger(L, 2);
 	XtSetSensitive(widget, value);
 	return 0;
 }
@@ -963,7 +1006,6 @@ lm_DestroyWidgetHierarchy(lua_State *L)
 	widget = (Widget)lua_topointer(L, -1);
 	lua_pop(L, 1);
 
-
 	if (lua_type(L, -1) == LUA_TTABLE) {
 		lua_pushnil(L);
 		lua_setfield(L, -2, "__parent");
@@ -1028,6 +1070,17 @@ lm_Realize(lua_State *L)
 	return 0;
 }
 
+static int
+lm_Unrealize(lua_State *L)
+{
+	Widget w;
+
+	w = lm_GetWidget(L, 1);
+	XtUnrealizeWidget(w);
+
+	return 0;
+}
+
 int
 luaopen_motif(lua_State *L)
 {
@@ -1058,6 +1111,7 @@ luaopen_motif(lua_State *L)
 		{ "Destroy",			lm_DestroyWidgetHierarchy },
 		{ "GetValues",			lm_GetValues },
 		{ "SetValues",			lm_SetValues },
+		{ "SetKeyboardFocus",		lm_SetKeyboardFocus },
 		{ "SetWorkWindow",		lm_SetWorkWindow },
 		{ "ScrollVisible",		lm_ScrollVisible },
 
@@ -1065,12 +1119,16 @@ luaopen_motif(lua_State *L)
 		{ "GetString",			lm_GetString },
 		{ "SetString",			lm_SetString },
 		{ "Remove",			lm_Remove },
+		{ "Insert",			lm_Insert },
+		{ "GetLastPosition",		lm_GetLastPosition },
 		{ "SetInsertionPosition",	lm_SetInsertionPosition },
 		{ "SetMaxLenght",		lm_SetMaxLength },
+		{ "SetSelection",		lm_SetSelection },
 		{ NULL,				NULL }
 	};
 	struct luaL_reg luaXt[] = {
 		{ "Realize",			lm_Realize },
+		{ "Unrealize",			lm_Unrealize },
 		{ "Initialize",			lm_Initialize },
 		{ "MainLoop",			lm_MainLoop },
 		{ "SetExitFlag",		lm_SetExitFlag },
