@@ -36,7 +36,6 @@ typedef struct cb_data {
 	lua_State *L;
 	int ref;	/* The function to be called */
 	int obj;	/* The Lua object to pass, usually the widget */
-	int data;	/* Arbitrary data to pass to the callback */
 } lm_callbackdata;
 
 struct str_constant {
