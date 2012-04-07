@@ -613,6 +613,15 @@ lm_UnmanageChild(lua_State *L)
 	return 0;
 }
 
+lm_ManageChild(lua_State *L)
+{
+	Widget widget;
+
+	widget = lm_GetWidget(L, 1);
+	XtManageChild(widget);
+	return 0;
+}
+
 static int
 lm_Initialize(lua_State *L)
 {
@@ -801,11 +810,20 @@ lm_newindex(lua_State *L)
 			for (n = 0; n < narg; n++)
 				free(args[n].name);
 		}
-	}
+	} else
+		printf("newindex on non-widget\n");
 	return 0;
 }
 
 #define MAXARGS 64
+
+static Widget
+GetTopShell(Widget w)
+{
+	while (w && !XtIsWMShell(w))
+		w = XtParent(w);
+	return w;
+}
 
 static Widget
 lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
@@ -898,7 +916,11 @@ lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
 	}
 
 	if (class == xmDialogShellWidgetClass)
-		widget = XtCreatePopupShell(name, class, parent, args, narg);
+		widget = XtCreatePopupShell(name, class, GetTopShell(parent), 
+		    args, narg);
+	else if (class == xmPanedWindowWidgetClass)
+		widget = XtCreateWidget(name, class, parent, args, narg);
+
 	else if (class != NULL)
 		widget = XtCreateManagedWidget(name, class, parent, args, narg);
 	if (widget != NULL) {
@@ -955,6 +977,8 @@ lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
 		lua_pushvalue(L, parentObj);
 		lua_setfield(L, -2, "__parent");
 	}
+	if (class == xmPanedWindowWidgetClass)
+		XtManageChild(widget);
 	return widget;
 }
 
@@ -1030,7 +1054,6 @@ lm_Realize(lua_State *L)
 	}
 	w = lm_CreateWidgetHierarchy(L, 0, toplevel, nam);
 	XtRealizeWidget(toplevel);
-
 	return 0;
 }
 
@@ -1062,6 +1085,7 @@ luaopen_motif(lua_State *L)
 
 		/* Managing, Xt */
 		{ "SetSensitive",		lm_SetSensitive },
+		{ "ManageChild",		lm_ManageChild },
 		{ "UnmanageChild",		lm_UnmanageChild },
 		{ "Screen",			lm_Screen },
 		{ "Parent",			lm_Parent },
