@@ -4,6 +4,7 @@ LIB=		motif
 CFLAGS+=	-fPIC -I/usr/include -I${PKGDIR}/include -I/usr/include/lua5.1
 LDADD+=		-L${XDIR}/lib -L${PKGDIR}/lib -lXm -lXt -lX11 -lm -lbsd
 
+PKGDIR=		/usr/local
 LIBDIR=		${PKGDIR}/lib/lua/5.1
 
 ${LIB}.so:	${SRCS:.c=.o}
@@ -13,5 +14,5 @@ ${LIB}.so:	${SRCS:.c=.o}
 clean:
 		rm -f *.o *.so
 install:
-	cp motif.so libmotif.so /usr/lib/
-
+	-mkdir -p ${LIBDIR}
+	cp motif.so libmotif.so ${LIBDIR}
