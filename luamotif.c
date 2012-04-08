@@ -627,14 +627,42 @@ lm_Initialize(lua_State *L)
 {
 	Widget toplevel;
 	XtAppContext *app;
+	String *res, *r;
 	const char *application_class;
-	int argc = 0;
+	int argc = 0, nres, t;
 	String argv[1];
 
+	res = NULL;
+	nres = 0;
 	app = malloc(sizeof(XtAppContext));
 	application_class = luaL_checkstring(L, 1);
+	if (lua_gettop(L) == 2) {
+		/* Count strings */
+		t = lua_gettop(L);
+		lua_pushnil(L);
+		while (lua_next(L, t) != 0) {
+			if (lua_type(L, -1) == LUA_TSTRING)
+				nres++;
+			lua_pop(L, 1);
+		}
+		if (nres > 0) {
+			res = calloc(nres + 1, sizeof(String));
+			
+			/* Populate resources */
+			t = lua_gettop(L);
+			r = res;
+			lua_pushnil(L);
+			while (lua_next(L, t) != 0) {
+				if (lua_type(L, -1) == LUA_TSTRING)
+					*r++ = strdup(lua_tostring(L, -1));
+				lua_pop(L, 1);
+			}
+			*r = NULL;
+		}
+	}
+	
 	toplevel = XtAppInitialize(app, (char *)application_class, NULL, 0,
-	    &argc, argv, NULL, NULL, 0);
+	    &argc, argv, res, NULL, 0);
 	lua_newtable(L);
 	lua_pushlightuserdata(L, toplevel);
 	lua_setfield(L, -2, "__widget");
