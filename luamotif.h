@@ -31,6 +31,7 @@
 #define __LUAMOTIF_H__
 
 #define WIDGET_METATABLE "Motif widget functions"
+#define CONTEXT_METATABLE "Xt application context"
 
 typedef struct cb_data {
 	lua_State *L;

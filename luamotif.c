@@ -284,7 +284,9 @@ lm_Callback(Widget widget, XtPointer client_data, XtPointer call_data)
 	
 	lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->ref);
 	lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->obj);
-	lua_pcall(cbd->L, 1, 0, 0);
+	if (lua_pcall(cbd->L, 1, 0, 0))
+		luaL_error(cbd->L, "error calling callback function:\n%s",
+		    lua_tostring(cbd->L, -1));
 }
 
 static void
@@ -634,7 +636,7 @@ lm_Initialize(lua_State *L)
 
 	res = NULL;
 	nres = 0;
-	app = malloc(sizeof(XtAppContext));
+
 	application_class = luaL_checkstring(L, 1);
 	if (lua_gettop(L) == 2) {
 		/* Count strings */
@@ -660,6 +662,9 @@ lm_Initialize(lua_State *L)
 			*r = NULL;
 		}
 	}
+	app = lua_newuserdata(L, sizeof(XtAppContext *));
+	luaL_getmetatable(L, CONTEXT_METATABLE);
+	lua_setmetatable(L, -2);
 	
 	toplevel = XtAppInitialize(app, (char *)application_class, NULL, 0,
 	    &argc, argv, res, NULL, 0);
@@ -668,8 +673,6 @@ lm_Initialize(lua_State *L)
 	lua_setfield(L, -2, "__widget");
 	luaL_getmetatable(L, WIDGET_METATABLE);
 	lua_setmetatable(L, -2);
-
-	lua_pushlightuserdata(L, app);
 	return 2;
 }
 
@@ -678,10 +681,7 @@ lm_MainLoop(lua_State *L)
 {
 	XtAppContext *app;
 
-	if (!lua_islightuserdata(L, 1))
-		luaL_argerror(L, 1, "udata expected");
-
-	app = lua_touserdata(L, 1);
+	app = luaL_checkudata(L, 1, CONTEXT_METATABLE);
 	XtAppMainLoop(*app);
 	return 0;
 }
@@ -691,11 +691,47 @@ lm_SetExitFlag(lua_State *L)
 {
 	XtAppContext *app;
 
-	if (!lua_islightuserdata(L, 1))
-		luaL_argerror(L, 1, "udata expected");
-
-	app = lua_touserdata(L, 1);
+	app = luaL_checkudata(L, 1, CONTEXT_METATABLE);
 	XtAppSetExitFlag(*app);
+	return 0;
+}
+static void
+lm_Interval(XtPointer client_data, XtIntervalId *ignored)
+{
+	lm_callbackdata *cbd = (lm_callbackdata *)client_data;
+
+	lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->ref);
+	if (lua_pcall(cbd->L, 0, 0, 0))
+		luaL_error(cbd->L, "error calling timeout function:\n%s",
+		    lua_tostring(cbd->L, -1));
+	luaL_unref(cbd->L, LUA_REGISTRYINDEX, cbd->ref);
+	free(cbd);
+}
+
+static int
+lm_AddTimeOut(lua_State *L)
+{
+	XtAppContext *app;
+	XtIntervalId id;
+	lm_callbackdata *cbd;
+	unsigned long interval;
+	
+	app = luaL_checkudata(L, 1, CONTEXT_METATABLE);
+	
+	cbd = malloc(sizeof(lm_callbackdata));
+	cbd->L = L;
+	cbd->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	interval = luaL_checkinteger(L, -1);
+	lua_pop(L, 1);
+	id = XtAppAddTimeOut(*app, interval, lm_Interval, cbd);
+	lua_pushinteger(L, id);
+	return 1;
+}
+
+static int
+lm_RemoveTimeOut(lua_State *L)
+{
+	XtRemoveTimeOut(luaL_checkinteger(L, 1));
 	return 0;
 }
 
@@ -1147,12 +1183,17 @@ luaopen_motif(lua_State *L)
 		{ "Realize",			lm_Realize },
 		{ "Unrealize",			lm_Unrealize },
 		{ "Initialize",			lm_Initialize },
-		{ "MainLoop",			lm_MainLoop },
-		{ "SetExitFlag",		lm_SetExitFlag },
+		{ "RemoveTimeOut",		lm_RemoveTimeOut },
 		{ "SetLanguageProc",		lm_XtSetLanguageProc },
 		{ NULL,				NULL }
 	};
-
+	struct luaL_reg luaXtApp[] = {
+		{ "AddTimeOut",			lm_AddTimeOut },
+		{ "MainLoop",			lm_MainLoop },
+		{ "SetExitFlag",		lm_SetExitFlag },
+		{ NULL,				NULL }
+	};
+	
 	luaL_register(L, "motif", luamotif);
 	lm_set_info(L);
 	register_global(L, luaXt);
@@ -1178,5 +1219,19 @@ luaopen_motif(lua_State *L)
 	}
 	lua_pop(L, 1);
 
+	/* The Xt application context metatable */
+	if (luaL_newmetatable(L, CONTEXT_METATABLE)) {
+		luaL_register(L, NULL, luaXtApp);
+
+		lua_pushliteral(L, "__index");
+		lua_pushvalue(L, -2);
+		lua_settable(L, -3);
+
+		lua_pushliteral(L, "__metatable");
+		lua_pushliteral(L, "must not access this metatable");
+		lua_settable(L, -3);
+	}
+	lua_pop(L, 1);
+	
 	return 1;
 }

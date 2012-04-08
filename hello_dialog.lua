@@ -1,19 +1,12 @@
 require "motif"
 
-function exit(w)
-	print("exiting")
-	SetExitFlag(app)
-end
-
-function activate(dialog)
-	print("OK was pressed.")
-end
-
 function popup(button)
 	local dialog = button:CreateInformationDialog("info")
 
 	dialog.messageString = "Hello, world!"
-	dialog.okCallback = activate
+	dialog.okCallback = function ()
+		print('OK was pressed')
+	end
 
 	Realize(button:XtParent(), dialog)
 
@@ -53,18 +46,18 @@ resources = {
 	'*form*textLabel*background: #999999'
 }
 
-toplevel, app = Initialize("NoResourceFile", resources)
+app, toplevel = Initialize("Demos", resources)
 
 rc = RowColumn {
-	pb = PushButton {
+	PushButton {
 		labelString = "Hello",
 		activateCallback = popup
 	},
 	PushButton {
 		labelString = "Goodbye",
-		activateCallback = exit
+		activateCallback = function () app:SetExitFlag() end
 	}
 }
 
 Realize(toplevel, rc)
-MainLoop(app)
+app:MainLoop()
