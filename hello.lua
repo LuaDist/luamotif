@@ -8,7 +8,7 @@ button = PushButton {
 }
 
 SetLanguageProc(nil, nil, nil)
-toplevel, app = Initialize("XLua")
+app, toplevel = Initialize("XLua")
 
 Realize(toplevel, button)
-MainLoop(app)
+app:MainLoop()
