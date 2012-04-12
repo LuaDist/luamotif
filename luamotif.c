@@ -12,7 +12,7 @@
  *     * Neither the name of Micro Systems Marc Balmer nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 /* Lua binding for Motif */
 
 #include <stdlib.h>
@@ -202,7 +202,7 @@ lm_Insert(lua_State *L)
 	Widget widget;
 
 	widget = lm_GetWidget(L, 1);
-	
+
 	XmTextInsert(widget, luaL_checkinteger(L, 2),
 	    (char *)luaL_checkstring(L, 3));
 	return 0;
@@ -281,7 +281,7 @@ static void
 lm_Callback(Widget widget, XtPointer client_data, XtPointer call_data)
 {
 	struct cb_data *cbd = (struct cb_data *)client_data;
-	
+
 	lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->ref);
 	lua_rawgeti(cbd->L, LUA_REGISTRYINDEX, cbd->obj);
 	if (lua_pcall(cbd->L, 1, 0, 0))
@@ -319,7 +319,7 @@ lm_AddCallback(lua_State *L)
 		luaL_error(L, "memory error");
 
 	cbd->L = L;
-	
+
 	/* reference the function */
 	cbd->ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	cb = lua_tostring(L, -1);
@@ -392,7 +392,7 @@ lm_GetValues(lua_State *L)
 {
 	Arg args[1];
 	Widget widget;
-	int narg, n, type, number;
+	int narg, n, nn, type, number;
 	const char *arg;
 	char *string, *value;
 	Cardinal card;
@@ -400,7 +400,8 @@ lm_GetValues(lua_State *L)
 
 	widget = lm_GetWidget(L, 1);
 
-	for (narg = 0, n = 2; n < lua_gettop(L); n++) {
+	nn = lua_gettop(L);
+	for (narg = 0, n = 2; n <= nn; n++) {
 		if (lua_type(L, n) != LUA_TSTRING)
 			continue;
 
@@ -649,7 +650,7 @@ lm_Initialize(lua_State *L)
 		}
 		if (nres > 0) {
 			res = calloc(nres + 1, sizeof(String));
-			
+
 			/* Populate resources */
 			t = lua_gettop(L);
 			r = res;
@@ -665,7 +666,7 @@ lm_Initialize(lua_State *L)
 	app = lua_newuserdata(L, sizeof(XtAppContext *));
 	luaL_getmetatable(L, CONTEXT_METATABLE);
 	lua_setmetatable(L, -2);
-	
+
 	toplevel = XtAppInitialize(app, (char *)application_class, NULL, 0,
 	    &argc, argv, res, NULL, 0);
 	lua_newtable(L);
@@ -715,9 +716,9 @@ lm_AddTimeOut(lua_State *L)
 	XtIntervalId id;
 	lm_callbackdata *cbd;
 	unsigned long interval;
-	
+
 	app = luaL_checkudata(L, 1, CONTEXT_METATABLE);
-	
+
 	cbd = malloc(sizeof(lm_callbackdata));
 	cbd->L = L;
 	cbd->ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -980,7 +981,7 @@ lm_CreateWidgetHierarchy(lua_State *L, int parentObj, Widget parent,
 	}
 
 	if (class == xmDialogShellWidgetClass)
-		widget = XtCreatePopupShell(name, class, GetTopShell(parent), 
+		widget = XtCreatePopupShell(name, class, GetTopShell(parent),
 		    args, narg);
 	else if (class == xmPanedWindowWidgetClass)
 		widget = XtCreateWidget(name, class, parent, args, narg);
@@ -1193,7 +1194,7 @@ luaopen_motif(lua_State *L)
 		{ "SetExitFlag",		lm_SetExitFlag },
 		{ NULL,				NULL }
 	};
-	
+
 	luaL_register(L, "motif", luamotif);
 	lm_set_info(L);
 	register_global(L, luaXt);
@@ -1232,6 +1233,6 @@ luaopen_motif(lua_State *L)
 		lua_settable(L, -3);
 	}
 	lua_pop(L, 1);
-	
+
 	return 1;
 }
