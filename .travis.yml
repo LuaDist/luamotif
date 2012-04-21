@@ -1,0 +1,42 @@
+#
+# LuaDist Travis-CI Hook
+#
+
+# Since CMake is not directly supported we use erlang VMs
+language: erlang
+
+# Try using multiple Lua Implementations
+env:
+  - LUA=""             # Use automatic dependencies
+  - LUA="luajit"       # Try with LuaJIT
+# - CMAKE="-DCMAKE_VARIABLE=value"
+# - LUA="lua-5.1.5"
+
+# Allow luajit to fail
+matrix:
+  allow_failures:
+    - env: LUA="luajit"
+
+# We need CMake and LuaDist
+install:
+  - sudo apt-get install libmotif-dev  # external dependencies
+  - git clone git://github.com/LuaDist/_util.git ~/_util
+  - . ~/_util/travis install-luadist
+
+# Use LuaDist to deploy the module
+script:
+  - . ~/_util/travis script-luadist
+
+# Only watch the master branch
+branches:
+  only:
+    - master
+
+# Notify the LuaDist Dev group if needed
+notifications:
+  recipients:
+    - luadist-dev@googlegroups.com
+  email:
+    on_success: change
+    on_failure: always
+  
