@@ -19,6 +19,7 @@ matrix:
 
 # We need CMake and LuaDist
 install:
+  - sudo apt-get install libmotif-dev  # external dependencies
   - git clone git://github.com/LuaDist/_util.git ~/_util
   - . ~/_util/travis install-luadist
 
