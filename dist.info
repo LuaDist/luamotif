@@ -1,0 +1,15 @@
+--- This file is part of LuaDist project
+
+name = "luamotif"
+version = "scm"
+
+desc = "Lua Binding for OpenMotif"
+author = "Marc Balmer"
+license = "BSD"
+url = "https://github.com/mbalmer/luamotif"
+maintainer = "David Manura"
+
+depends = {
+	"lua ~> 5.1"
+}
+-- Ubuntu package: libmotif-dev
